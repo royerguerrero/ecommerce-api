@@ -41,3 +41,13 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_cart_items(self, instance):
         items = ShoppingCartItem.objects.filter(product=instance)
         return CartItemSerilaizer(items, many=True).data
+
+
+class ProductStatSerializer(serializers.Serializer):
+    stats = serializers.DictField(
+        child=serializers.ListSerializer(
+            child=serializers.IntegerField(),
+        )
+    )
+    
+    

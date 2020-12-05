@@ -1,15 +1,16 @@
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import (ListAPIView, CreateAPIView,
+                                     RetrieveUpdateDestroyAPIView, GenericAPIView)
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
 
-from store.serializers import ProductSerializer
+from store.serializers import ProductSerializer, ProductStatSerializer
 from store.models import Product
 
 from django.utils import timezone
 from django.core.cache import cache
-
 
 
 class ProductPagination(LimitOffsetPagination):
@@ -56,15 +57,14 @@ class ProductRetriveUpdateDestroy(RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     lookup_field = 'id'
     serializer_class = ProductSerializer
-    
-    
+
     def delete(self, request, *args, **kwargs):
         product_id = request.data.get('id')
         response = super().delete(request, *args, **kwargs)
         if response.status_code == 204:
             cache.delete(f'product_data{product_id}')
         return response
-    
+
     def update(self, request, *args, **kwargs):
         response = super().update(request, *args, **kwargs)
         if response.status_code == 200:
@@ -74,5 +74,22 @@ class ProductRetriveUpdateDestroy(RetrieveUpdateDestroyAPIView):
                 'description': product['description'],
                 'price': product['price'],
             })
-            
+
         return response
+
+
+class ProductStats(GenericAPIView):
+    lookup_field = 'id'
+    serializer_class = ProductStatSerializer
+    queryset = Product.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        obj = self.get_object()
+        serializer = self.get_serializer({
+            'stats': {
+                '2019-01-01': [5, 10, 15],
+                '2019-01-02': [20, 1, 6],
+            }
+        })
+        
+        return Response(serializer.data)
