@@ -24,12 +24,14 @@ class ProductSerializer(serializers.ModelSerializer):
     sale_start = serializers.DateTimeField(
         input_formats=['%I:%M %p %d %B %Y'], format=None, allow_null=True,
         help_text='Accepted format is "12:01 PM 16 April 2017"',
-        style={'input_type': 'text', 'placeholder': '12:01 AM 28 July 2020'}
+        style={'input_type': 'text', 'placeholder': '12:01 AM 28 July 2020'},
+        required=False
     )
     sale_end = serializers.DateTimeField(
         input_formats=['%I:%M %p %d %B %Y'], format=None, allow_null=True,
         help_text='Accepted format is "12:01 PM 16 April 2017"',
-        style={'input_type': 'text', 'placeholder': '12:01 AM 28 July 2020'}
+        style={'input_type': 'text', 'placeholder': '12:01 AM 28 July 2020'},
+        required=False
     )
     photo = serializers.ImageField(default=None)
     warranty = serializers.FileField(write_only=True, default=None)
@@ -50,7 +52,11 @@ class ProductSerializer(serializers.ModelSerializer):
             instance.description += b'; '.join(
                 validate_data['warranty'].readlines()
             ).decode()
-        return instance
+        return super().update(instance, validate_data)
+
+    def create(self, validated_data):
+        validated_data.pop('warranty')
+        return Product.objects.create(**validated_data)
 
 class ProductStatSerializer(serializers.Serializer):
     stats = serializers.DictField(
